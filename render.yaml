@@ -31,7 +31,7 @@ services:
       - key: APP_LOCALE
         value: fr
       - key: APP_FALLBACK_LOCALE
-        value: fr
+        value: en
       - key: LOG_CHANNEL
         value: stderr
       - key: LOG_LEVEL

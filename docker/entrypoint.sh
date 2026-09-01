@@ -20,6 +20,7 @@ php artisan config:cache
 php artisan route:cache
 php artisan view:cache
 php artisan filament:assets >/dev/null 2>&1 || true
+php artisan filament:optimize >/dev/null 2>&1 || true
 
 # Only useful when FILESYSTEM_DISK=public (local uploads). Harmless otherwise.
 php artisan storage:link >/dev/null 2>&1 || true
