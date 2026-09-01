@@ -1,0 +1,31 @@
+.git
+.github
+.gitignore
+.idea
+.vscode
+.zed
+
+# Installed fresh inside the image
+vendor
+node_modules
+
+# Local-only
+.env
+.env.*
+!.env.example
+storage/app/public/covers
+storage/app/public/episodes
+storage/app/public/branding
+storage/logs/*
+storage/framework/cache/data/*
+storage/framework/sessions/*
+storage/framework/views/*
+database/*.sqlite
+database/*.sqlite-journal
+.phpunit.result.cache
+.phpunit.cache
+tests
+README.md
+DEPLOY_RENDER.md
+AGENTS.md
+CLAUDE.md
