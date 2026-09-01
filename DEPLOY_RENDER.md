@@ -52,25 +52,29 @@ Dans **isdb-radio-api → Environment**, remplis les variables marquées « sync
 Après avoir défini `APP_URL`, clique **Manual Deploy → Deploy latest commit** pour
 que l'URL soit prise dans le cache de config.
 
-## 4. Données initiales (une seule fois)
+## 4. Données initiales (automatique)
 
-Les migrations tournent à chaque démarrage. Le contenu de démo (catégories,
-émissions, réglages, compte admin) se sème manuellement une fois :
+Aucune commande à lancer : au démarrage, le conteneur exécute
+`migrate --force` puis `db:seed --force`. Le seed :
 
-**isdb-radio-api → Shell** :
+- crée le compte admin + le contenu de démo (catégories, émissions, réglages)
+  **au tout premier déploiement** ;
+- resynchronise ensuite le compte admin depuis `ADMIN_EMAIL` / `ADMIN_PASSWORD`
+  **à chaque déploiement** (pratique pour changer le mot de passe) ;
+- ne réécrit **jamais** ce que tu as modifié dans le back-office.
 
-```bash
-php artisan db:seed --force
-```
-
-Vérifie :
+Vérifie après le déploiement :
 
 ```
 curl https://isdb-radio-api.onrender.com/api/v1/app-config
 curl https://isdb-radio-api.onrender.com/api/v1/stream
+curl "https://isdb-radio-api.onrender.com/api/v1/episodes?per_page=3"
 ```
 
 Admin : `https://isdb-radio-api.onrender.com/admin` (identifiants `ADMIN_EMAIL` / `ADMIN_PASSWORD`).
+
+> Changer le mot de passe admin plus tard : modifie `ADMIN_PASSWORD` dans
+> l'onglet Environment de Render et redéploie.
 
 ## 5. Reconstruire l'APK avec la nouvelle URL
 
@@ -120,5 +124,7 @@ AWS_URL=https://<ton-domaine-public-r2>
   en `afterResponse()`. Si tu ajoutes des jobs, crée un service Render de type
   *Background Worker* avec `php artisan queue:work`.
 - Rate limiting API : 60 req/min/IP (`routes/api.php`).
-- Changer le mot de passe admin plus tard : Shell Render →
-  `php artisan tinker` puis `User::where('email','…')->first()->update(['password'=>'nouveau'])`.
+- Changer le mot de passe admin : modifie `ADMIN_PASSWORD` dans l'onglet
+  Environment puis redéploie (le seed resynchronise le compte à chaque boot).
+- Le Shell Render n'est pas disponible sur le plan gratuit — c'est pourquoi
+  migrations et seed tournent automatiquement au démarrage du conteneur.

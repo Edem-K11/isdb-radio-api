@@ -11,9 +11,13 @@ sed -ri "s/<VirtualHost \*:[0-9]+>/<VirtualHost *:${PORT}>/" \
 # Rebuild the package manifest with the real environment available.
 php artisan package:discover --ansi || true
 
-# Schema is always brought up to date. Seeding is a one-off you run yourself
-# from the Render Shell:  php artisan db:seed --force
+# Schema is always brought up to date.
 php artisan migrate --force
+
+# Seed: creates the admin + demo content on first boot, syncs the admin
+# credentials from ADMIN_* on every boot, never overwrites dashboard edits.
+# Non-fatal: a transient failure here must not take the site down.
+php artisan db:seed --force || echo "db:seed failed (non-fatal), will retry next deploy"
 
 # Cache config/routes/views/Filament with the runtime environment baked in.
 php artisan config:cache
