@@ -16,6 +16,7 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 # --- Apache: serve Laravel's public/, allow .htaccess rewrites -----------
 ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
 COPY docker/000-default.conf /etc/apache2/sites-available/000-default.conf
+COPY docker/php.ini /usr/local/etc/php/conf.d/zz-radio-isdb.ini
 RUN a2enmod rewrite headers
 
 WORKDIR /var/www/html

@@ -61,9 +61,14 @@ class EpisodeForm
                                 'audio/mpeg', 'audio/mp3', 'audio/aac',
                                 'audio/mp4', 'audio/x-m4a', 'audio/ogg',
                             ])
-                            ->maxSize(153600)
+                            ->maxSize(61440) // 60 Mo — aligné sur php.ini (upload_max_filesize)
                             ->requiredWithout('audio_url')
-                            ->helperText('MP3/AAC/M4A/OGG, 150 Mo max.'),
+                            ->validationMessages([
+                                'max' => 'Fichier trop lourd : 60 Mo maximum. Héberge-le ailleurs et colle son lien dans « URL audio externe ».',
+                                'mimetypes' => 'Format non pris en charge. Formats acceptés : MP3, AAC, M4A, OGG.',
+                                'required_without' => 'Ajoute un fichier audio, ou renseigne une URL audio externe.',
+                            ])
+                            ->helperText('MP3 / AAC / M4A / OGG — 60 Mo maximum. Pour un fichier plus lourd, héberge-le ailleurs et utilise le champ URL ci-contre.'),
                         TextInput::make('audio_url')
                             ->label('URL audio externe')
                             ->url()

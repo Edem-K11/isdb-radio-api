@@ -65,7 +65,7 @@ return [
 
     'temporary_file_upload' => [
         'disk' => 'local',    // private disk; Livewire streams previews through its own route
-        'rules' => ['required', 'file', 'max:204800'], // 200 MB (large enough for audio episodes)
+        'rules' => ['required', 'file', 'max:61440'], // 60 MB — matched to php.ini and the Filament form
         'directory' => 'livewire-tmp',
         'middleware' => null,  // Example: 'throttle:5,1'             | Default: 'throttle:60,1'
         'preview_mimes' => [   // Supported file types for temporary pre-signed file URLs...
