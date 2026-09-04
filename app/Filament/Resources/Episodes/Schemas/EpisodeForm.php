@@ -57,21 +57,17 @@ class EpisodeForm
                             ->disk('public')
                             ->directory('episodes')
                             ->visibility('public')
-                            // Large : tout ce dont le type MIME commence par
-                            // "audio/" (mp3, aac, m4a, ogg, opus, wav, flac,
-                            // amr…), plus les conteneurs mp4/3gp que certains
-                            // téléphones taguent en "video/…" pour un .m4a/.3gp.
-                            ->acceptedFileTypes([
-                                'audio/*',
-                                'video/mp4',
-                                'video/3gpp',
-                                'application/ogg',
-                            ])
+                            // Pas de acceptedFileTypes() : les navigateurs
+                            // mobiles renvoient souvent un type MIME vide ou
+                            // "application/octet-stream" et FilePond bloquait le
+                            // fichier avant même l'envoi. On valide plutôt côté
+                            // serveur sur le contenu réel du fichier.
+                            ->rules(['mimetypes:audio/*,video/mp4,video/3gpp,application/ogg,application/octet-stream'])
                             ->maxSize(204800) // 200 Mo — aligné sur php.ini (upload_max_filesize)
                             ->requiredWithout('audio_url')
                             ->validationMessages([
                                 'max' => 'Fichier trop lourd : 200 Mo maximum. Héberge-le ailleurs et colle son lien dans « URL audio externe ».',
-                                'mimetypes' => "Ce fichier n'est pas reconnu comme de l'audio. Formats testés : MP3, AAC, M4A, OGG, OPUS, WAV, FLAC, AMR. Convertis-le en MP3 si besoin.",
+                                'mimetypes' => "Ce fichier n'est pas reconnu comme de l'audio. Convertis-le en MP3, ou colle un lien dans « URL audio externe ».",
                                 'required_without' => 'Ajoute un fichier audio, ou renseigne une URL audio externe.',
                             ])
                             ->helperText('MP3, AAC, M4A, OGG, OPUS, WAV, FLAC, AMR… — 200 Mo maximum. Fichier plus lourd → héberge-le ailleurs et utilise le champ URL ci-contre.'),
