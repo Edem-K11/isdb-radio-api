@@ -124,7 +124,7 @@ AWS_URL=https://<ton-domaine-public-r2>
   en `afterResponse()`. Si tu ajoutes des jobs, crée un service Render de type
   *Background Worker* avec `php artisan queue:work`.
 - Rate limiting API : 60 req/min/IP (`routes/api.php`).
-- Upload audio d'une émission : **60 Mo maximum** (`docker/php.ini`). Au-delà,
+- Upload audio d'une émission : **200 Mo maximum** (`docker/php.ini`). Au-delà,
   héberge le fichier ailleurs et utilise le champ « URL audio externe ». Sur le
   plan gratuit (512 Mo RAM) éviter les très gros fichiers.
 - Changer le mot de passe admin : modifie `ADMIN_PASSWORD` dans l'onglet

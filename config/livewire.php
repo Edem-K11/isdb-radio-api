@@ -65,15 +65,16 @@ return [
 
     'temporary_file_upload' => [
         'disk' => 'local',    // private disk; Livewire streams previews through its own route
-        'rules' => ['required', 'file', 'max:61440'], // 60 MB — matched to php.ini and the Filament form
+        'rules' => ['required', 'file', 'max:204800'], // 200 MB — matched to php.ini and the Filament form
         'directory' => 'livewire-tmp',
         'middleware' => null,  // Example: 'throttle:5,1'             | Default: 'throttle:60,1'
         'preview_mimes' => [   // Supported file types for temporary pre-signed file URLs...
             'png', 'gif', 'bmp', 'svg', 'wav', 'mp4',
-            'mov', 'avi', 'wmv', 'mp3', 'm4a',
-            'jpg', 'jpeg', 'mpga', 'webp', 'wma',
+            'mov', 'avi', 'wmv', 'mp3', 'm4a', 'aac', 'ogg', 'oga',
+            'opus', 'amr', '3gp', '3gpp', 'flac', 'weba', 'mpga',
+            'jpg', 'jpeg', 'webp', 'wma',
         ],
-        'max_upload_time' => 5, // Max duration (in minutes) before an upload is invalidated...
+        'max_upload_time' => 10, // Max duration (in minutes) before an upload is invalidated...
         'cleanup' => true, // Should cleanup temporary uploads older than 24 hrs...
     ],
 

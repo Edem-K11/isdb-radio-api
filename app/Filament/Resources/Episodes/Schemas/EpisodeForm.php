@@ -57,24 +57,30 @@ class EpisodeForm
                             ->disk('public')
                             ->directory('episodes')
                             ->visibility('public')
+                            // Large : tout ce dont le type MIME commence par
+                            // "audio/" (mp3, aac, m4a, ogg, opus, wav, flac,
+                            // amr…), plus les conteneurs mp4/3gp que certains
+                            // téléphones taguent en "video/…" pour un .m4a/.3gp.
                             ->acceptedFileTypes([
-                                'audio/mpeg', 'audio/mp3', 'audio/aac',
-                                'audio/mp4', 'audio/x-m4a', 'audio/ogg',
+                                'audio/*',
+                                'video/mp4',
+                                'video/3gpp',
+                                'application/ogg',
                             ])
-                            ->maxSize(61440) // 60 Mo — aligné sur php.ini (upload_max_filesize)
+                            ->maxSize(204800) // 200 Mo — aligné sur php.ini (upload_max_filesize)
                             ->requiredWithout('audio_url')
                             ->validationMessages([
-                                'max' => 'Fichier trop lourd : 60 Mo maximum. Héberge-le ailleurs et colle son lien dans « URL audio externe ».',
-                                'mimetypes' => 'Format non pris en charge. Formats acceptés : MP3, AAC, M4A, OGG.',
+                                'max' => 'Fichier trop lourd : 200 Mo maximum. Héberge-le ailleurs et colle son lien dans « URL audio externe ».',
+                                'mimetypes' => "Ce fichier n'est pas reconnu comme de l'audio. Formats testés : MP3, AAC, M4A, OGG, OPUS, WAV, FLAC, AMR. Convertis-le en MP3 si besoin.",
                                 'required_without' => 'Ajoute un fichier audio, ou renseigne une URL audio externe.',
                             ])
-                            ->helperText('MP3 / AAC / M4A / OGG — 60 Mo maximum. Pour un fichier plus lourd, héberge-le ailleurs et utilise le champ URL ci-contre.'),
+                            ->helperText('MP3, AAC, M4A, OGG, OPUS, WAV, FLAC, AMR… — 200 Mo maximum. Fichier plus lourd → héberge-le ailleurs et utilise le champ URL ci-contre.'),
                         TextInput::make('audio_url')
                             ->label('URL audio externe')
                             ->url()
                             ->maxLength(2048)
                             ->requiredWithout('audio_path')
-                            ->helperText('Lien direct vers un fichier .mp3/.aac.'),
+                            ->helperText('Lien direct vers un fichier audio (.mp3, .aac, .m4a, .ogg…).'),
                     ]),
 
                 Section::make('Publication')
