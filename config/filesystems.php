@@ -66,6 +66,14 @@ return [
             // "when_required" skips it unless the operation truly needs one.
             'request_checksum_calculation' => 'when_required',
             'response_checksum_validation' => 'when_required',
+            // Safety net: if some other request to R2 ever hangs the same way
+            // (a different code path, a network blip…), it fails loudly after
+            // two minutes instead of leaving the admin stuck on a spinner
+            // forever with no way to even cancel and retry.
+            'http' => [
+                'connect_timeout' => 15,
+                'timeout' => 120,
+            ],
         ],
 
     ],
