@@ -44,6 +44,12 @@ class EpisodeForm
                             ->directory('covers')
                             ->visibility('public')
                             ->maxSize(8192)
+                            // On stockage distant (R2/S3), Filament vérifie sinon la
+                            // taille et le type du fichier avec des appels réseau
+                            // supplémentaires après l'envoi — c'est ce qui donnait
+                            // l'impression que l'aperçu restait bloqué en chargement
+                            // alors que le fichier était déjà bien enregistré.
+                            ->fetchFileInformation(false)
                             ->helperText('JPG/PNG/WebP, 8 Mo max.'),
                     ]),
 
@@ -66,6 +72,7 @@ class EpisodeForm
                             // serveur sur le contenu réel du fichier.
                             ->rules(['mimetypes:audio/*,video/mp4,video/3gpp,application/ogg,application/octet-stream'])
                             ->maxSize(204800) // 200 Mo — aligné sur php.ini (upload_max_filesize)
+                            ->fetchFileInformation(false) // voir cover_path — évite l'aperçu bloqué en chargement
                             ->requiredWithout('audio_url')
                             // Un nouveau fichier téléversé remplace forcément l'ancien
                             // lien externe — sinon celui-ci resterait prioritaire dans
