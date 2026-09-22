@@ -58,6 +58,14 @@ return [
             'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
             'throw' => false,
             'report' => false,
+            // aws-sdk-php ≥3.319 defaults to streaming a trailing checksum
+            // (aws-chunked + x-amz-checksum-*) on PutObject bodies without a
+            // known Content-Length — which is how Flysystem writes uploaded
+            // files. Cloudflare R2 doesn't support that encoding and the
+            // request just hangs forever instead of failing fast. Forcing
+            // "when_required" skips it unless the operation truly needs one.
+            'request_checksum_calculation' => 'when_required',
+            'response_checksum_validation' => 'when_required',
         ],
 
     ],

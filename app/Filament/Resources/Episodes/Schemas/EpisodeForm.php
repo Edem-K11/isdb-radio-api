@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources\Episodes\Schemas;
 
-use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -92,15 +91,13 @@ class EpisodeForm
                     ]),
 
                 Section::make('Publication')
-                    ->columns(2)
                     ->schema([
                         Toggle::make('is_published')
                             ->label('Publiée')
-                            ->helperText("Visible dans l'application."),
-                        DateTimePicker::make('published_at')
-                            ->label('Date de publication')
-                            ->seconds(false)
-                            ->helperText('Laisser vide : maintenant, au moment de la publication.'),
+                            // The date itself is never edited here — Episode::booted()
+                            // stamps published_at with now() automatically the first
+                            // time this is switched on, and never touches it again.
+                            ->helperText('Visible dans l\'application. La date de publication est enregistrée automatiquement.'),
                     ]),
             ]);
     }
