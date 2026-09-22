@@ -2,12 +2,15 @@
 
 namespace App\Filament\Resources\StreamSettings\Schemas;
 
+use App\Models\StreamSetting;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Illuminate\Support\HtmlString;
 
 class StreamSettingForm
 {
@@ -58,8 +61,21 @@ class StreamSettingForm
                             ->required()
                             ->maxLength(200)
                             ->columnSpanFull(),
+                        Placeholder::make('logo_preview')
+                            ->label('Logo actuel')
+                            // See EpisodeForm's cover_preview — same reasoning: the
+                            // FileUpload field always writes locally first and gets
+                            // promoted to R2 afterward, so its own "existing file"
+                            // preview can go stale; read through the model instead.
+                            ->content(fn (?StreamSetting $record): HtmlString => new HtmlString(
+                                $record?->logoUrl()
+                                    ? '<img src="'.e($record->logoUrl()).'" alt="Logo actuel" style="max-width:120px;border-radius:12px;display:block;" />'
+                                    : '<span style="color:#6b7280;">Aucun logo pour le moment.</span>'
+                            ))
+                            ->visible(fn (?StreamSetting $record): bool => $record !== null)
+                            ->columnSpanFull(),
                         FileUpload::make('logo_path')
-                            ->label('Logo')
+                            ->label('Changer le logo')
                             ->image()
                             ->imageEditor()
                             // Voir EpisodeForm/RemoteUploadPromoter — toujours local

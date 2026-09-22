@@ -2,13 +2,16 @@
 
 namespace App\Filament\Resources\Episodes\Schemas;
 
+use App\Models\Episode;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Illuminate\Support\HtmlString;
 
 class EpisodeForm
 {
@@ -36,8 +39,26 @@ class EpisodeForm
                             ->relationship('category', 'name')
                             ->searchable()
                             ->preload(),
+                        Placeholder::make('cover_preview')
+                            ->label('Jaquette actuelle')
+                            // The FileUpload field below always writes to the fast
+                            // local disk first, then RemoteUploadPromoter moves the
+                            // file to R2 in the background — by the time this page
+                            // re-renders (even in the same request, after a redirect),
+                            // the file may already be gone from 'public'. Filament's
+                            // own "existing file" preview looks at the field's disk
+                            // (public) and would show nothing. Reading through the
+                            // model's own coverUrl() instead always resolves to
+                            // wherever the file actually lives right now.
+                            ->content(fn (?Episode $record): HtmlString => new HtmlString(
+                                $record?->coverUrl()
+                                    ? '<img src="'.e($record->coverUrl()).'" alt="Jaquette actuelle" style="max-width:180px;border-radius:12px;display:block;" />'
+                                    : '<span style="color:#6b7280;">Aucune jaquette pour le moment.</span>'
+                            ))
+                            ->visible(fn (?Episode $record): bool => $record !== null)
+                            ->columnSpanFull(),
                         FileUpload::make('cover_path')
-                            ->label('Image de couverture')
+                            ->label('Changer la jaquette')
                             ->image()
                             ->imageEditor()
                             // Toujours le disque local rapide, jamais R2 directement —
@@ -58,8 +79,18 @@ class EpisodeForm
                         .'l\'URL externe pour éviter toute confusion. La durée est calculée automatiquement.')
                     ->columns(2)
                     ->schema([
+                        Placeholder::make('audio_preview')
+                            ->label('Audio actuel')
+                            // See cover_preview above — same reasoning.
+                            ->content(fn (?Episode $record): HtmlString => new HtmlString(
+                                $record?->audioUrl()
+                                    ? '<audio controls preload="none" style="width:100%;" src="'.e($record->audioUrl()).'"></audio>'
+                                    : '<span style="color:#6b7280;">Aucun fichier audio pour le moment.</span>'
+                            ))
+                            ->visible(fn (?Episode $record): bool => $record !== null)
+                            ->columnSpanFull(),
                         FileUpload::make('audio_path')
-                            ->label('Fichier audio')
+                            ->label('Changer le fichier audio')
                             // Voir cover_path — toujours local d'abord, promu vers R2
                             // en tâche de fond après coup.
                             ->disk('public')
