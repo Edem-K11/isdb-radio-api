@@ -62,7 +62,7 @@ class StreamSettingForm
                             ->label('Logo')
                             ->image()
                             ->imageEditor()
-                            ->disk('public')
+                            ->disk(config('filesystems.default'))
                             ->directory('branding')
                             ->visibility('public')
                             ->maxSize(8192)

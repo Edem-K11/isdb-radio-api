@@ -5,6 +5,8 @@ namespace Tests\Feature\Api;
 use App\Models\Category;
 use App\Models\Episode;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class EpisodeApiTest extends TestCase
@@ -142,5 +144,45 @@ class EpisodeApiTest extends TestCase
         $this->postJson("/api/v1/episodes/{$episode->slug}/play")->assertNoContent();
 
         $this->assertSame(5, $episode->fresh()->plays_count);
+    }
+
+    public function test_an_uploaded_file_wins_over_a_leftover_external_url(): void
+    {
+        Storage::fake('public');
+        config(['filesystems.default' => 'public']);
+
+        $file = UploadedFile::fake()->create('episode.mp3', 100, 'audio/mpeg');
+        $path = $file->store('episodes', 'public');
+
+        $episode = Episode::factory()->create([
+            'audio_url' => 'https://example.com/old-placeholder.mp3',
+            'audio_path' => $path,
+        ]);
+
+        $this->getJson("/api/v1/episodes/{$episode->slug}")
+            ->assertOk()
+            ->assertJsonPath('data.audio_url', Storage::disk('public')->url($path));
+    }
+
+    public function test_audio_updated_at_only_moves_when_the_audio_actually_changes(): void
+    {
+        $episode = Episode::factory()->create(['audio_url' => 'https://example.com/a.mp3']);
+        $firstStamp = $episode->fresh()->audio_updated_at;
+
+        // Unrelated edit — should NOT bump it.
+        $episode->update(['title' => 'Nouveau titre']);
+        $this->assertEquals($firstStamp, $episode->fresh()->audio_updated_at);
+
+        // Swapping the audio — should bump it.
+        $this->travel(1)->hour();
+        $episode->update(['audio_url' => 'https://example.com/b.mp3']);
+        $this->assertNotEquals($firstStamp, $episode->fresh()->audio_updated_at);
+
+        $this->getJson("/api/v1/episodes/{$episode->slug}")
+            ->assertOk()
+            ->assertJsonPath(
+                'data.audio_updated_at',
+                $episode->fresh()->audio_updated_at->toIso8601String(),
+            );
     }
 }

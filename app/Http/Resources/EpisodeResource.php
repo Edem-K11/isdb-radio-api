@@ -18,6 +18,7 @@ class EpisodeResource extends JsonResource
             'slug' => $this->slug,
             'description' => $this->description,
             'audio_url' => $this->audioUrl(),
+            'audio_updated_at' => $this->audio_updated_at?->toIso8601String(),
             'cover_url' => $this->coverUrl(),
             'duration_seconds' => $this->duration_seconds,
             'plays_count' => (int) $this->plays_count,

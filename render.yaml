@@ -52,6 +52,24 @@ services:
         value: database
       - key: FILESYSTEM_DISK
         value: public       # local uploads — see note in DEPLOY_RENDER.md about R2 for persistence
+      # --- Cloudflare R2 (S3-compatible), not active yet ---------------------
+      # Once the bucket exists: fill these in via the Render dashboard, THEN
+      # flip FILESYSTEM_DISK above to `s3` and redeploy. Leaving FILESYSTEM_DISK
+      # on `public` until then means these being unset breaks nothing.
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: AWS_DEFAULT_REGION
+        value: auto
+      - key: AWS_BUCKET
+        sync: false
+      - key: AWS_ENDPOINT
+        sync: false         # https://<account_id>.r2.cloudflarestorage.com
+      - key: AWS_USE_PATH_STYLE_ENDPOINT
+        value: "true"
+      - key: AWS_URL
+        sync: false         # the bucket's public base URL (R2 public dev URL or a custom domain)
       - key: ADMIN_EMAIL
         sync: false
       - key: ADMIN_PASSWORD

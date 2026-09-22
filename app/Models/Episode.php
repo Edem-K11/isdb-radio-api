@@ -19,6 +19,7 @@ class Episode extends Model
         'description',
         'audio_path',
         'audio_url',
+        'audio_updated_at',
         'cover_path',
         'category_id',
         'duration_seconds',
@@ -32,6 +33,7 @@ class Episode extends Model
         return [
             'is_published' => 'boolean',
             'published_at' => 'datetime',
+            'audio_updated_at' => 'datetime',
             'duration_seconds' => 'integer',
             'plays_count' => 'integer',
         ];
@@ -46,6 +48,13 @@ class Episode extends Model
 
             if ($episode->is_published && blank($episode->published_at)) {
                 $episode->published_at = now();
+            }
+
+            // Bumped only when the actual audio changed — not on every edit —
+            // so the app can tell a saved playback position still points at
+            // the same content (see the `audio_updated_at` migration).
+            if ($episode->isDirty(['audio_path', 'audio_url'])) {
+                $episode->audio_updated_at = now();
             }
         });
     }
@@ -66,20 +75,26 @@ class Episode extends Model
     }
 
     /**
-     * Absolute URL the app streams from: external URL wins, otherwise the
-     * uploaded file on the public disk.
+     * Absolute URL the app streams from: an uploaded file always wins over
+     * the external URL field — a deliberate upload replacing a placeholder
+     * link is the common case, and leaving both filled shouldn't silently
+     * keep serving the old link. The external URL field is for episodes
+     * genuinely hosted elsewhere (or files over the upload size limit) with
+     * nothing uploaded here at all.
      */
     public function audioUrl(): ?string
     {
-        if (filled($this->audio_url)) {
-            return $this->audio_url;
+        if ($this->audio_path) {
+            return Storage::disk(config('filesystems.default'))->url($this->audio_path);
         }
 
-        return $this->audio_path ? Storage::disk('public')->url($this->audio_path) : null;
+        return filled($this->audio_url) ? $this->audio_url : null;
     }
 
     public function coverUrl(): ?string
     {
-        return $this->cover_path ? Storage::disk('public')->url($this->cover_path) : null;
+        return $this->cover_path
+            ? Storage::disk(config('filesystems.default'))->url($this->cover_path)
+            : null;
     }
 }

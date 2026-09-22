@@ -41,7 +41,7 @@ class EpisodeForm
                             ->label('Image de couverture')
                             ->image()
                             ->imageEditor()
-                            ->disk('public')
+                            ->disk(config('filesystems.default'))
                             ->directory('covers')
                             ->visibility('public')
                             ->maxSize(8192)
@@ -49,12 +49,15 @@ class EpisodeForm
                     ]),
 
                 Section::make('Audio')
-                    ->description("Fournis un fichier à téléverser OU une URL externe (au moins l'un des deux). La durée est calculée automatiquement.")
+                    ->description('Le fichier téléversé est toujours utilisé en priorité s\'il y en a un. '
+                        .'L\'URL externe ne sert que si aucun fichier n\'est téléversé (ex : fichier de plus '
+                        .'de 200 Mo hébergé ailleurs). Téléverser un nouveau fichier efface automatiquement '
+                        .'l\'URL externe pour éviter toute confusion. La durée est calculée automatiquement.')
                     ->columns(2)
                     ->schema([
                         FileUpload::make('audio_path')
                             ->label('Fichier audio')
-                            ->disk('public')
+                            ->disk(config('filesystems.default'))
                             ->directory('episodes')
                             ->visibility('public')
                             // Pas de acceptedFileTypes() : les navigateurs
@@ -65,6 +68,14 @@ class EpisodeForm
                             ->rules(['mimetypes:audio/*,video/mp4,video/3gpp,application/ogg,application/octet-stream'])
                             ->maxSize(204800) // 200 Mo — aligné sur php.ini (upload_max_filesize)
                             ->requiredWithout('audio_url')
+                            // Un nouveau fichier téléversé remplace forcément l'ancien
+                            // lien externe — sinon celui-ci resterait prioritaire dans
+                            // les vieilles données et le nouveau fichier serait ignoré.
+                            ->afterStateUpdated(function ($state, callable $set) {
+                                if (filled($state)) {
+                                    $set('audio_url', null);
+                                }
+                            })
                             ->validationMessages([
                                 'max' => 'Fichier trop lourd : 200 Mo maximum. Héberge-le ailleurs et colle son lien dans « URL audio externe ».',
                                 'mimetypes' => "Ce fichier n'est pas reconnu comme de l'audio. Convertis-le en MP3, ou colle un lien dans « URL audio externe ».",
@@ -76,7 +87,8 @@ class EpisodeForm
                             ->url()
                             ->maxLength(2048)
                             ->requiredWithout('audio_path')
-                            ->helperText('Lien direct vers un fichier audio (.mp3, .aac, .m4a, .ogg…).'),
+                            ->helperText('Lien direct vers un fichier audio (.mp3, .aac, .m4a, .ogg…). '
+                                .'Ignoré tant qu\'un fichier est téléversé ci-contre.'),
                     ]),
 
                 Section::make('Publication')

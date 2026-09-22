@@ -40,6 +40,8 @@ class StreamSetting extends Model
 
     public function logoUrl(): ?string
     {
-        return $this->logo_path ? Storage::disk('public')->url($this->logo_path) : null;
+        return $this->logo_path
+            ? Storage::disk(config('filesystems.default'))->url($this->logo_path)
+            : null;
     }
 }

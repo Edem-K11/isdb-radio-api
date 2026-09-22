@@ -21,7 +21,7 @@ class EpisodesTable
             ->columns([
                 ImageColumn::make('cover_path')
                     ->label('')
-                    ->disk('public')
+                    ->disk(config('filesystems.default'))
                     ->height(40)
                     ->square(),
                 TextColumn::make('title')
