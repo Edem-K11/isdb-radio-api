@@ -62,13 +62,12 @@ class StreamSettingForm
                             ->label('Logo')
                             ->image()
                             ->imageEditor()
-                            ->disk(config('filesystems.default'))
+                            // Voir EpisodeForm/RemoteUploadPromoter — toujours local
+                            // d'abord, promu vers R2 en tâche de fond après coup.
+                            ->disk('public')
                             ->directory('branding')
                             ->visibility('public')
                             ->maxSize(8192)
-                            // Voir EpisodeForm — évite des appels réseau superflus vers
-                            // le stockage distant qui bloquaient visuellement l'aperçu.
-                            ->fetchFileInformation(false)
                             ->helperText('JPG/PNG/WebP, 8 Mo max.')
                             ->columnSpanFull(),
                     ]),

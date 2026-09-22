@@ -4,17 +4,17 @@ namespace App\Observers;
 
 use App\Models\Episode;
 use App\Support\AudioDuration;
+use App\Support\RemoteUploadPromoter;
 use Illuminate\Support\Facades\Storage;
 
 class EpisodeObserver
 {
     /**
-     * Fast path: read the duration straight from a freshly uploaded file, but
-     * only when it's on the local/public disk — getID3 needs a real
-     * filesystem path, which a remote disk (S3/R2) doesn't have. Remote-disk
-     * uploads fall through to the deferred probe in saved() instead, the
-     * same way an external URL already does, rather than downloading the
-     * whole file into memory on every request.
+     * Fast path: read the duration straight from the freshly uploaded file.
+     * cover_path/audio_path always land on the local 'public' disk first,
+     * regardless of the app's final storage disk (see saved() below and
+     * RemoteUploadPromoter) — so a real local filesystem path for getID3 is
+     * always available here, synchronously, even when R2 is the target.
      */
     public function saving(Episode $episode): void
     {
@@ -22,40 +22,28 @@ class EpisodeObserver
             return;
         }
 
-        $diskName = config('filesystems.default', 'public');
-        if ($diskName === 's3') {
-            return;
-        }
-
-        $disk = Storage::disk($diskName);
+        $disk = Storage::disk('public');
         if ($disk->exists($episode->audio_path)) {
             $episode->duration_seconds = AudioDuration::fromFile($disk->path($episode->audio_path));
         }
     }
 
     /**
-     * Slow path: probe a remote URL (or a remote-disk upload's public URL)
-     * after the response is sent, so saving the form stays instant even
-     * without a queue worker.
+     * Promotes any freshly uploaded file to the real storage disk (R2) off
+     * the request/response cycle, and — for the one remaining case saving()
+     * can't handle synchronously, an external audio_url — probes the
+     * duration the slow way, also deferred.
      */
     public function saved(Episode $episode): void
     {
-        if (filled($episode->duration_seconds)) {
-            return;
-        }
+        RemoteUploadPromoter::schedule($episode, ['cover_path', 'audio_path']);
 
-        $diskName = config('filesystems.default', 'public');
-        $url = filled($episode->audio_url)
-            ? $episode->audio_url
-            : ($diskName === 's3' && filled($episode->audio_path)
-                ? Storage::disk($diskName)->url($episode->audio_path)
-                : null);
-
-        if (blank($url)) {
+        if (filled($episode->duration_seconds) || blank($episode->audio_url)) {
             return;
         }
 
         $id = $episode->getKey();
+        $url = $episode->audio_url;
 
         dispatch(function () use ($id, $url): void {
             $seconds = AudioDuration::fromUrl($url);

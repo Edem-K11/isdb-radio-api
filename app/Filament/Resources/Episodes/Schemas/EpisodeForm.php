@@ -40,16 +40,14 @@ class EpisodeForm
                             ->label('Image de couverture')
                             ->image()
                             ->imageEditor()
-                            ->disk(config('filesystems.default'))
+                            // Toujours le disque local rapide, jamais R2 directement —
+                            // voir RemoteUploadPromoter : un envoi qui attend sur la
+                            // bande passante vers R2 en plein milieu de la requête est
+                            // ce qui laissait le formulaire bloqué indéfiniment.
+                            ->disk('public')
                             ->directory('covers')
                             ->visibility('public')
                             ->maxSize(8192)
-                            // On stockage distant (R2/S3), Filament vérifie sinon la
-                            // taille et le type du fichier avec des appels réseau
-                            // supplémentaires après l'envoi — c'est ce qui donnait
-                            // l'impression que l'aperçu restait bloqué en chargement
-                            // alors que le fichier était déjà bien enregistré.
-                            ->fetchFileInformation(false)
                             ->helperText('JPG/PNG/WebP, 8 Mo max.'),
                     ]),
 
@@ -62,7 +60,9 @@ class EpisodeForm
                     ->schema([
                         FileUpload::make('audio_path')
                             ->label('Fichier audio')
-                            ->disk(config('filesystems.default'))
+                            // Voir cover_path — toujours local d'abord, promu vers R2
+                            // en tâche de fond après coup.
+                            ->disk('public')
                             ->directory('episodes')
                             ->visibility('public')
                             // Pas de acceptedFileTypes() : les navigateurs
@@ -72,7 +72,6 @@ class EpisodeForm
                             // serveur sur le contenu réel du fichier.
                             ->rules(['mimetypes:audio/*,video/mp4,video/3gpp,application/ogg,application/octet-stream'])
                             ->maxSize(204800) // 200 Mo — aligné sur php.ini (upload_max_filesize)
-                            ->fetchFileInformation(false) // voir cover_path — évite l'aperçu bloqué en chargement
                             ->requiredWithout('audio_url')
                             // Un nouveau fichier téléversé remplace forcément l'ancien
                             // lien externe — sinon celui-ci resterait prioritaire dans
