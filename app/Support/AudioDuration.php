@@ -25,10 +25,15 @@ class AudioDuration
     }
 
     /**
-     * Probe a remote file without downloading all of it: fetch the total size
-     * plus the first chunk (which holds the MP3/AAC header, including the
-     * VBR/Xing frame), then let getID3 compute the duration from the header
-     * and the real total size.
+     * Download the file and let getID3 read its real duration.
+     *
+     * This used to probe just the first 1 MB and extrapolate from the total
+     * Content-Length — fast, but only correct for constant-bitrate audio.
+     * Most real-world MP3s (and anything with an ID3v2 tag carrying embedded
+     * cover art ahead of the audio frames) are VBR, so that shortcut was
+     * producing wrong durations. Downloading the whole file is the only way
+     * to get it right; this runs once per episode, deferred and off the
+     * request/response cycle, so the extra time doesn't matter.
      */
     public static function fromUrl(string $url): ?int
     {
@@ -38,59 +43,18 @@ class AudioDuration
         }
 
         try {
-            $totalSize = self::remoteSize($url);
-
-            $chunk = Http::timeout(20)
-                ->withHeaders(['Range' => 'bytes=0-1048575']) // first 1 MB
-                ->get($url);
-
-            if (! $chunk->successful() && $chunk->status() !== 206) {
-                return self::fromFullDownload($url, $tmp);
-            }
-
-            file_put_contents($tmp, $chunk->body());
-
-            $info = (new getID3())->analyze($tmp, $totalSize ?? 0);
-            $seconds = $info['playtime_seconds'] ?? null;
-
-            if ($seconds !== null) {
-                return (int) round($seconds);
-            }
-
-            // Header-only probe was not enough (e.g. no Content-Length): fall
-            // back to a full download with a generous timeout.
-            return self::fromFullDownload($url, $tmp);
-        } catch (Throwable) {
-            return null;
-        } finally {
-            @unlink($tmp);
-        }
-    }
-
-    private static function remoteSize(string $url): ?int
-    {
-        try {
-            $head = Http::timeout(10)->head($url);
-            $len = $head->header('Content-Length');
-
-            return $len !== '' && $len !== null ? (int) $len : null;
-        } catch (Throwable) {
-            return null;
-        }
-    }
-
-    private static function fromFullDownload(string $url, string $tmp): ?int
-    {
-        try {
             $response = Http::timeout(120)->get($url);
             if (! $response->successful()) {
                 return null;
             }
+
             file_put_contents($tmp, $response->body());
 
             return self::fromFile($tmp);
         } catch (Throwable) {
             return null;
+        } finally {
+            @unlink($tmp);
         }
     }
 }
