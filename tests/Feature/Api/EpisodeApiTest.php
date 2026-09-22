@@ -55,6 +55,27 @@ class EpisodeApiTest extends TestCase
             ->assertJsonPath('data.0.title', 'Le journal du campus');
     }
 
+    public function test_search_is_case_insensitive(): void
+    {
+        Episode::factory()->create(['title' => 'Reportage : la vie sur le campus']);
+
+        $this->getJson('/api/v1/episodes?search=reportage')
+            ->assertOk()
+            ->assertJsonCount(1, 'data');
+    }
+
+    public function test_it_searches_by_category_name(): void
+    {
+        $music = Category::factory()->create(['name' => 'Musique']);
+        Episode::factory()->for($music)->create(['title' => 'Playlist etudiante']);
+        Episode::factory()->create(['title' => 'Le journal du campus']);
+
+        $this->getJson('/api/v1/episodes?search=musique')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.title', 'Playlist etudiante');
+    }
+
     public function test_it_caps_per_page(): void
     {
         $this->getJson('/api/v1/episodes?per_page=999')->assertStatus(422);

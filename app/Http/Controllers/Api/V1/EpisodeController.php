@@ -34,10 +34,23 @@ class EpisodeController extends Controller
             )
             ->when(
                 $validated['search'] ?? null,
-                fn ($query, string $term) => $query->where(
-                    fn ($q) => $q->where('title', 'like', "%{$term}%")
-                        ->orWhere('description', 'like', "%{$term}%"),
-                ),
+                function ($query, string $term) {
+                    // Case-insensitive on every driver we run on (sqlite in
+                    // dev, pgsql in prod): plain `like` is case-*sensitive*
+                    // on Postgres, so "reportage" silently missed a title
+                    // stored as "Reportage" — LOWER() on both sides fixes
+                    // that everywhere instead of only in dev/sqlite.
+                    $like = '%'.mb_strtolower($term, 'UTF-8').'%';
+
+                    return $query->where(
+                        fn ($q) => $q->whereRaw('LOWER(title) LIKE ?', [$like])
+                            ->orWhereRaw('LOWER(description) LIKE ?', [$like])
+                            ->orWhereHas(
+                                'category',
+                                fn ($cat) => $cat->whereRaw('LOWER(name) LIKE ?', [$like]),
+                            ),
+                    );
+                },
             )
             ->orderByDesc('published_at')
             ->paginate($validated['per_page'] ?? 15)
