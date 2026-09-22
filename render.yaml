@@ -51,11 +51,8 @@ services:
       - key: QUEUE_CONNECTION
         value: database
       - key: FILESYSTEM_DISK
-        value: public       # local uploads — see note in DEPLOY_RENDER.md about R2 for persistence
-      # --- Cloudflare R2 (S3-compatible), not active yet ---------------------
-      # Once the bucket exists: fill these in via the Render dashboard, THEN
-      # flip FILESYSTEM_DISK above to `s3` and redeploy. Leaving FILESYSTEM_DISK
-      # on `public` until then means these being unset breaks nothing.
+        value: s3            # Cloudflare R2 — uploads now persist across deploys
+      # --- Cloudflare R2 (S3-compatible) --------------------------------------
       - key: AWS_ACCESS_KEY_ID
         sync: false
       - key: AWS_SECRET_ACCESS_KEY

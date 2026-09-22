@@ -97,24 +97,20 @@ L'URL est figée dans l'APK : si l'URL Render change, il faut reconstruire.
 | **PostgreSQL** | supprimé **30 jours** après création | plan Postgres payant, **ou** base gratuite permanente [Neon](https://neon.tech) / [Supabase](https://supabase.com) → colle son URL dans `DB_URL` |
 | **Fichiers uploadés** (jaquettes, audio) | le disque est **effacé à chaque déploiement** | voir ci-dessous |
 
-### Uploads persistants
+### Uploads persistants — actif (Cloudflare R2)
 
-**Option A — disque Render** (nécessite un plan payant) : décommente le bloc
-`disk:` dans `render.yaml` (monté sur `storage/app/public`).
+`FILESYSTEM_DISK=s3` dans `render.yaml`, avec les identifiants R2 renseignés
+dans l'onglet Environment de Render (`AWS_ACCESS_KEY_ID`,
+`AWS_SECRET_ACCESS_KEY`, `AWS_BUCKET`, `AWS_ENDPOINT`, `AWS_URL`). Les
+jaquettes et fichiers audio uploadés depuis le dashboard survivent
+maintenant à chaque redéploiement.
 
-**Option B — stockage objet S3 (recommandé)** : [Cloudflare R2](https://developers.cloudflare.com/r2/)
-offre 10 Go gratuits. Ajoute ces variables et passe `FILESYSTEM_DISK=s3` :
+> Tout ce qui a été uploadé **avant** cette bascule reste perdu (c'était sur
+> l'ancien disque éphémère) : les épisodes concernés doivent être réuploadés
+> une fois dans le dashboard.
 
-```
-FILESYSTEM_DISK=s3
-AWS_ACCESS_KEY_ID=…
-AWS_SECRET_ACCESS_KEY=…
-AWS_DEFAULT_REGION=auto
-AWS_BUCKET=isdb-radio
-AWS_ENDPOINT=https://<account_id>.r2.cloudflarestorage.com
-AWS_USE_PATH_STYLE_ENDPOINT=true
-AWS_URL=https://<ton-domaine-public-r2>
-```
+Alternative non retenue — **disque Render** (nécessite un plan payant) :
+décommenter le bloc `disk:` dans `render.yaml` (monté sur `storage/app/public`).
 
 ## Notes
 
