@@ -81,6 +81,44 @@ class EpisodeApiTest extends TestCase
         $this->getJson('/api/v1/episodes?per_page=999')->assertStatus(422);
     }
 
+    public function test_it_sorts_by_most_played(): void
+    {
+        $quiet = Episode::factory()->create(['plays_count' => 3]);
+        $popular = Episode::factory()->create(['plays_count' => 300]);
+
+        $this->getJson('/api/v1/episodes?sort=plays')
+            ->assertOk()
+            ->assertJsonPath('data.0.slug', $popular->slug)
+            ->assertJsonPath('data.1.slug', $quiet->slug);
+    }
+
+    public function test_it_sorts_by_longest(): void
+    {
+        $short = Episode::factory()->create(['duration_seconds' => 120]);
+        $long = Episode::factory()->create(['duration_seconds' => 3000]);
+
+        $this->getJson('/api/v1/episodes?sort=longest')
+            ->assertOk()
+            ->assertJsonPath('data.0.slug', $long->slug)
+            ->assertJsonPath('data.1.slug', $short->slug);
+    }
+
+    public function test_it_sorts_by_shortest(): void
+    {
+        $short = Episode::factory()->create(['duration_seconds' => 120]);
+        $long = Episode::factory()->create(['duration_seconds' => 3000]);
+
+        $this->getJson('/api/v1/episodes?sort=shortest')
+            ->assertOk()
+            ->assertJsonPath('data.0.slug', $short->slug)
+            ->assertJsonPath('data.1.slug', $long->slug);
+    }
+
+    public function test_it_rejects_an_unknown_sort_value(): void
+    {
+        $this->getJson('/api/v1/episodes?sort=bogus')->assertStatus(422);
+    }
+
     public function test_it_shows_a_single_published_episode(): void
     {
         $episode = Episode::factory()->create();

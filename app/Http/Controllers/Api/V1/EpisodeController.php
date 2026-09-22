@@ -8,6 +8,7 @@ use App\Models\Episode;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
+use Illuminate\Validation\Rule;
 
 class EpisodeController extends Controller
 {
@@ -20,6 +21,7 @@ class EpisodeController extends Controller
             'per_page' => ['sometimes', 'integer', 'min:1', 'max:50'],
             'category' => ['sometimes', 'string', 'max:120'],
             'search' => ['sometimes', 'string', 'max:120'],
+            'sort' => ['sometimes', Rule::in(['latest', 'plays', 'longest', 'shortest'])],
         ]);
 
         $episodes = Episode::query()
@@ -52,7 +54,15 @@ class EpisodeController extends Controller
                     );
                 },
             )
-            ->orderByDesc('published_at')
+            ->when(
+                $validated['sort'] ?? 'latest',
+                fn ($query, string $sort) => match ($sort) {
+                    'plays' => $query->orderByDesc('plays_count'),
+                    'longest' => $query->orderByDesc('duration_seconds'),
+                    'shortest' => $query->orderBy('duration_seconds'),
+                    default => $query->orderByDesc('published_at'),
+                },
+            )
             ->paginate($validated['per_page'] ?? 15)
             ->withQueryString();
 
