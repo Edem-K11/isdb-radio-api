@@ -84,6 +84,8 @@ class StreamSettingForm
                             ->directory('branding')
                             ->visibility('public')
                             ->maxSize(8192)
+                            // Voir EpisodeForm::cover_path pour le raisonnement complet.
+                            ->fetchFileInformation(false)
                             ->helperText('JPG/PNG/WebP, 8 Mo max.')
                             ->columnSpanFull(),
                     ]),

@@ -69,6 +69,14 @@ class EpisodeForm
                             ->directory('covers')
                             ->visibility('public')
                             ->maxSize(8192)
+                            // RemoteUploadPromoter déplace le fichier vers R2 (et le
+                            // supprime du disque 'public') juste après l'enregistrement.
+                            // Sans ceci, Filament::hydrateFiles() vérifie l'existence du
+                            // fichier sur le disque 'public' à chaque rechargement de la
+                            // page et retire silencieusement le chemin de l'état du champ
+                            // s'il n'y est plus — ce qui viderait le champ et pourrait
+                            // déclencher à tort des règles de validation "required".
+                            ->fetchFileInformation(false)
                             ->helperText('JPG/PNG/WebP, 8 Mo max.'),
                     ]),
 
@@ -96,6 +104,10 @@ class EpisodeForm
                             ->disk('public')
                             ->directory('episodes')
                             ->visibility('public')
+                            // Voir cover_path — indispensable ici aussi, sinon
+                            // requiredWithout('audio_url') se déclenche à tort dès que
+                            // le fichier existant a été promu vers R2.
+                            ->fetchFileInformation(false)
                             // Pas de acceptedFileTypes() : les navigateurs
                             // mobiles renvoient souvent un type MIME vide ou
                             // "application/octet-stream" et FilePond bloquait le
