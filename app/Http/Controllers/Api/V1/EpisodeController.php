@@ -21,7 +21,9 @@ class EpisodeController extends Controller
             'per_page' => ['sometimes', 'integer', 'min:1', 'max:50'],
             'category' => ['sometimes', 'string', 'max:120'],
             'search' => ['sometimes', 'string', 'max:120'],
-            'sort' => ['sometimes', Rule::in(['latest', 'plays', 'longest', 'shortest'])],
+            'sort' => ['sometimes', Rule::in(['latest', 'oldest', 'plays', 'longest', 'shortest'])],
+            'date_from' => ['sometimes', 'date'],
+            'date_to' => ['sometimes', 'date', 'after_or_equal:date_from'],
         ]);
 
         $episodes = Episode::query()
@@ -55,8 +57,20 @@ class EpisodeController extends Controller
                 },
             )
             ->when(
+                $validated['date_from'] ?? null,
+                // whereDate compares the date part only, so date_to stays
+                // inclusive of the whole day regardless of published_at's
+                // time-of-day component.
+                fn ($query, string $date) => $query->whereDate('published_at', '>=', $date),
+            )
+            ->when(
+                $validated['date_to'] ?? null,
+                fn ($query, string $date) => $query->whereDate('published_at', '<=', $date),
+            )
+            ->when(
                 $validated['sort'] ?? 'latest',
                 fn ($query, string $sort) => match ($sort) {
+                    'oldest' => $query->orderBy('published_at'),
                     'plays' => $query->orderByDesc('plays_count'),
                     'longest' => $query->orderByDesc('duration_seconds'),
                     'shortest' => $query->orderBy('duration_seconds'),

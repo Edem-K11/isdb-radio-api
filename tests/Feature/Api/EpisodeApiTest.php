@@ -46,6 +46,24 @@ class EpisodeApiTest extends TestCase
             ->assertJsonPath('data.0.category.slug', 'actualites');
     }
 
+    public function test_it_filters_by_date_range(): void
+    {
+        $tooOld = Episode::factory()->create(['published_at' => '2026-01-01 10:00:00']);
+        $inRange = Episode::factory()->create(['published_at' => '2026-03-15 10:00:00']);
+        $tooNew = Episode::factory()->create(['published_at' => '2026-06-01 10:00:00']);
+
+        $this->getJson('/api/v1/episodes?date_from=2026-03-01&date_to=2026-03-31')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.slug', $inRange->slug);
+    }
+
+    public function test_it_rejects_a_date_to_before_date_from(): void
+    {
+        $this->getJson('/api/v1/episodes?date_from=2026-03-31&date_to=2026-03-01')
+            ->assertStatus(422);
+    }
+
     public function test_it_searches_by_title(): void
     {
         Episode::factory()->create(['title' => 'Le journal du campus']);
@@ -81,6 +99,17 @@ class EpisodeApiTest extends TestCase
     public function test_it_caps_per_page(): void
     {
         $this->getJson('/api/v1/episodes?per_page=999')->assertStatus(422);
+    }
+
+    public function test_it_sorts_by_oldest(): void
+    {
+        $old = Episode::factory()->create(['published_at' => now()->subMonth()]);
+        $new = Episode::factory()->create(['published_at' => now()->subDay()]);
+
+        $this->getJson('/api/v1/episodes?sort=oldest')
+            ->assertOk()
+            ->assertJsonPath('data.0.slug', $old->slug)
+            ->assertJsonPath('data.1.slug', $new->slug);
     }
 
     public function test_it_sorts_by_most_played(): void
